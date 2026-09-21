@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mqa"
+version = "0.1.0"
+description = "Residue-level model quality assessment with protein representations and DeepAccNet fusion"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+  "numpy>=1.24",
+  "torch>=2.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7.4"]
+esm2 = ["fair-esm>=2.0.0"]
+esm3 = ["esm>=3.0.0"]
+prostt5 = ["sentencepiece>=0.1.99", "transformers>=4.30,<5"]
+saprot = ["biopython>=1.81", "transformers>=4.30,<5"]
+
+[project.scripts]
+mqa-extract = "mqa.extractors.cli:main"
+mqa-train-head = "mqa.train_head:main"
+mqa-test-head = "mqa.test_head:main"
+mqa-train-fusion = "mqa.train_fusion:main"
+mqa-predict-fusion = "mqa.predict_fusion:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
