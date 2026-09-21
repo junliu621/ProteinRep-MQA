@@ -1,0 +1,3 @@
+target,decoy,embedding,label
+example_target,example_decoy,../features/example_target/example_decoy.npz,../labels/example_target/example_decoy.json
+

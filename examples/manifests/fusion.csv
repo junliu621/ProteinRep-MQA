@@ -1,1 +1,3 @@
+target,decoy,feature,embedding,native
+example_target,example_decoy,../deepaccnet/example_target/example_decoy.features.npz,../features/example_target/example_decoy.npz,../deepaccnet/example_target/native.features.npz
 
