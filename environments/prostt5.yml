@@ -1,0 +1,15 @@
+name: mqa-prostt5
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - biopython==1.83
+      - numpy==1.26.4
+      - sentencepiece==0.2.1
+      - tokenizers==0.15.2
+      - torch==2.7.1
+      - transformers==4.38.2
+      - "-e ."
+

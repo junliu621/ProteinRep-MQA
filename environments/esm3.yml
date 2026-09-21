@@ -1,0 +1,10 @@
+name: mqa-esm3
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - torch==2.8.0
+      - "esm @ git+https://github.com/evolutionaryscale/esm.git@6e89bf7d127b06e95d8243c020936cd67d862229"
+      - "-e ."

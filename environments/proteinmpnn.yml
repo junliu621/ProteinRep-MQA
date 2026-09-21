@@ -1,0 +1,12 @@
+name: mqa-proteinmpnn
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - biopython==1.86
+      - numpy==2.2.6
+      - torch==2.8.0
+      - "-e ."
+

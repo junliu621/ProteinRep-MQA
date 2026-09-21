@@ -1,0 +1,14 @@
+name: mqa-saprot
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - biopython==1.81
+      - numpy==1.25.2
+      - tokenizers==0.13.3
+      - torch==2.8.0
+      - transformers==4.28.0
+      - "-e ."
+

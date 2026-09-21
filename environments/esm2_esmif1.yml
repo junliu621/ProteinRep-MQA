@@ -1,0 +1,13 @@
+name: mqa-esm2-esmif1
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - fair-esm==2.0.0
+      - numpy==1.26.4
+      - torch==2.8.0
+      - biopython==1.86
+      - "-e ."
+
