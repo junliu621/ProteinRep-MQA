@@ -1,0 +1,6 @@
+[console_scripts]
+mqa-extract = mqa.extractors.cli:main
+mqa-predict-fusion = mqa.predict_fusion:main
+mqa-test-head = mqa.test_head:main
+mqa-train-fusion = mqa.train_fusion:main
+mqa-train-head = mqa.train_head:main
