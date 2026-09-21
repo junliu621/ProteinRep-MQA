@@ -1,11 +1,27 @@
-# mqa
+# ProteinRep-MQA
 
-`mqa` predicts residue-level protein model quality from pretrained protein
-representations, either with a small regression head or by fusing the
-representation into DeepAccNet.
+**ProteinRep-MQA** is a systematic framework for investigating structural model
+quality signals encoded in pretrained protein representations.
 
-The project contains the models used in the experiments for ESM-2, ESM-3,
-SaProt, ProstT5, ESM-IF1, and ProteinMPNN.
+The framework evaluates pretrained representations from six protein models,
+including ESM-2, ESM-3, SaProt, ProstT5, ESM-IF1, and ProteinMPNN, and examines
+three complementary aspects of their utility for protein model quality
+assessment:
+
+1. **Representation-space sensitivity** — whether structural quality is reflected
+   in pretrained representation spaces.
+2. **Direct quality decodability** — whether residue-level model quality can be
+   predicted directly from frozen pretrained representations using a lightweight
+   prediction head.
+3. **Feature complementarity** — whether pretrained representations provide
+   additional information when integrated with the established DeepAccNet
+   framework.
+
+This repository provides the code for representation extraction, model training,
+and evaluation used in the study:
+
+**"Pretrained protein representations encode signals of structural model quality."**
+
 
 ## Models
 
