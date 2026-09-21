@@ -1,0 +1,14 @@
+name: mqa-core
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10.19
+  - pip
+  - pip:
+      - numpy==2.2.6
+      - scipy==1.15.3
+      - torch==2.6.0
+      - tqdm==4.67.3
+      - pytest==8.3.5
+      - "-e ."
+
