@@ -1,7 +1,6 @@
 # ProteinRep-MQA
 
-**ProteinRep-MQA** is a systematic framework for investigating structural model
-quality signals encoded in pretrained protein representations.
+**ProteinRep-MQA** is a systematic evaluation framework for investigating structural model quality signals encoded in pretrained protein representations.
 
 The framework evaluates pretrained representations from six protein models,
 including ESM-2, ESM-3, SaProt, ProstT5, ESM-IF1, and ProteinMPNN, and examines
@@ -17,30 +16,33 @@ assessment:
    additional information when integrated with the established DeepAccNet
    framework.
 
-This repository provides the code for representation extraction, model training,
-and evaluation used in the study:
+## Overview
 
-**"Pretrained protein representations encode signals of structural model quality."**
+<p align="center">
+  <img src="assets/framework.png" width="850">
+</p>
+
+ProteinRep-MQA evaluates pretrained protein representations through native–decoy
+representation-space analysis, direct quality decoding from frozen
+representations (Framework A), and representation-augmented DeepAccNet
+(Framework B).
+
 
 
 ## Models
 
-| Feature | Checkpoint | Residue tensor | Standalone MLP | DeepAccNet projection |
+| Model | Checkpoint | Representation | Standalone head | DeepAccNet projection |
 | --- | --- | ---: | --- | --- |
-| ESM-2 | `esm2_t33_650M_UR50D` | `L x 1280` | 512-256-128 | 512-256-64 |
+| ESM-2 | `esm2_t33_650M_UR50D` | `L x 1280` | — | 512-256-64 |
 | ESM-3 | `esm3-open` | `L x 1536` | 512-256-128 | 512-256-64 |
 | SaProt | `SaProt_650M_AF2` | `L x 1280` | 512-256-128 | 512-256-64 |
 | ProstT5 | `Rostlab/ProstT5` | `L x 1024` | 512-256-128 | 512-256-64 |
-| ESM-IF1 | `esm_if1_gvp4_t16_142M_UR50` | `L x 512` | 256-128 | 256-64 |
-| ProteinMPNN | `v_48_020` | `L x 128` | 256-128 | 64 |
+| ESM-IF1 | `esm_if1_gvp4_t16_142M_UR50` | `L x 512` | 512-256-128 | 512-256-64 |
+| ProteinMPNN | `v_48_020` | `L x 128` | 512-256-128 | 512-256-64 |
 
-The default standalone model is the MLP that was used in the experiments. A
-true single-layer baseline is available with `--head linear`. ProteinMPNN is a
-structure-conditioned sequence-design model rather than a protein language
-model, but its encoder representation is handled through the same interface.
-
-The merged DeepAccNet implementation is checkpoint-compatible with all six
-original experiment models.
+The default standalone predictor reproduces the MLP architecture used in the study. An optional linear prediction head is also available through --head linear. 
+ProteinMPNN is a structure-conditioned sequence-design model rather than a protein language model, but its encoder representation is handled through the same interface.
+The merged DeepAccNet implementation is checkpoint-compatible with all six original experiment models.
 
 ## Installation
 
@@ -190,13 +192,24 @@ The final flag is required only for trusted historical DeepAccNet checkpoints
 that contain NumPy training-history objects and cannot use PyTorch's restricted
 weights-only loader.
 
-## Weights and data
+## Data and model weights
+
+Datasets, pretrained model weights, structure files, extracted representations,
+and prediction outputs are not distributed with this repository.
+
+The CASP14 evaluation data and DeepAccNet training data used in the study are
+publicly available from their original sources. See the manuscript and the
+links below for details.
+
+Large files should be stored externally and supplied through command-line
+arguments or manifests.
 
 Model weights, datasets, structure files, extracted tensors, and prediction
 outputs are not included. Keep them in external directories and pass their
 paths through command-line arguments or manifests.
 
-## References
+
+## External resources
 
 - [DeepAccNet](https://github.com/hiranumn/DeepAccNet)
 - [ESM-2 and ESM-IF1](https://github.com/facebookresearch/esm)
@@ -204,3 +217,14 @@ paths through command-line arguments or manifests.
 - [SaProt](https://github.com/westlake-repl/SaProt)
 - [ProstT5](https://huggingface.co/Rostlab/ProstT5)
 - [ProteinMPNN](https://github.com/dauparas/ProteinMPNN)
+
+
+## Citation
+
+If you find ProteinRep-MQA useful, please cite:
+
+> Qihang Zhen, Lei Xie, Bo Li, Yang Zhang, Guijun Zhang, Jun Liu.
+> **Pretrained protein representations encode signals of structural model quality.**
+> Manuscript in preparation.
+
+A BibTeX entry will be provided upon publication.
