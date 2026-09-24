@@ -1,18 +1,19 @@
 # ProteinRep-MQA
 
-**ProteinRep-MQA** is a systematic evaluation framework for investigating structural model quality signals encoded in pretrained protein representations.
+**ProteinRep-MQA** is a systematic evaluation framework for investigating
+structural model quality signals encoded in pretrained protein representations.
 
 The framework evaluates pretrained representations from six protein models,
 including ESM-2, ESM-3, SaProt, ProstT5, ESM-IF1, and ProteinMPNN, and examines
 three complementary aspects of their utility for protein model quality
 assessment:
 
-1. **Representation-space sensitivity** — whether structural quality is reflected
-   in pretrained representation spaces.
-2. **Direct quality decodability** — whether residue-level model quality can be
+1. **Representation-space sensitivity** - whether structural quality is
+   reflected in pretrained representation spaces.
+2. **Direct quality decodability** - whether residue-level model quality can be
    predicted directly from frozen pretrained representations using a lightweight
    prediction head.
-3. **Feature complementarity** — whether pretrained representations provide
+3. **Feature complementarity** - whether pretrained representations provide
    additional information when integrated with the established DeepAccNet
    framework.
 
@@ -22,35 +23,56 @@ assessment:
   <img src="assets/framework.png" width="850">
 </p>
 
-ProteinRep-MQA evaluates pretrained protein representations through native–decoy
+ProteinRep-MQA evaluates pretrained protein representations through native-decoy
 representation-space analysis, direct quality decoding from frozen
 representations (Framework A), and representation-augmented DeepAccNet
 (Framework B).
-
-
 
 ## Models
 
 | Model | Checkpoint | Representation | Standalone head | DeepAccNet projection |
 | --- | --- | ---: | --- | --- |
-| ESM-2 | `esm2_t33_650M_UR50D` | `L x 1280` | — | 512-256-64 |
+| ESM-2 | `esm2_t33_650M_UR50D` | `L x 1280` | - | 512-256-64 |
 | ESM-3 | `esm3-open` | `L x 1536` | 512-256-128 | 512-256-64 |
 | SaProt | `SaProt_650M_AF2` | `L x 1280` | 512-256-128 | 512-256-64 |
 | ProstT5 | `Rostlab/ProstT5` | `L x 1024` | 512-256-128 | 512-256-64 |
 | ESM-IF1 | `esm_if1_gvp4_t16_142M_UR50` | `L x 512` | 512-256-128 | 512-256-64 |
 | ProteinMPNN | `v_48_020` | `L x 128` | 512-256-128 | 512-256-64 |
 
-The default standalone predictor reproduces the MLP architecture used in the study. An optional linear prediction head is also available through --head linear. 
-ProteinMPNN is a structure-conditioned sequence-design model rather than a protein language model, but its encoder representation is handled through the same interface.
-The merged DeepAccNet implementation is checkpoint-compatible with all six original experiment models.
+The default standalone predictor reproduces the MLP architecture used in the
+study. An optional linear prediction head is available with `--head linear`.
+ProteinMPNN is a structure-conditioned sequence-design model rather than a
+protein language model, but its encoder representation is handled through the
+same interface.
+
+The merged DeepAccNet implementation is checkpoint-compatible with the
+representation-augmented DeepAccNet models used in the experiments.
 
 ## Installation
 
-Create the training environment:
+Create the training environment from the repository root:
 
 ```bash
 conda env create -f environments/core.yml
 conda activate mqa-core
+```
+
+The environment file installs this repository in editable mode through
+`pip -e .`. If the command-line tools are not available, or after editing the
+source code, rerun:
+
+```bash
+python -m pip install -e .
+```
+
+Editable installation creates the following commands:
+
+```text
+mqa-extract
+mqa-train-head
+mqa-test-head
+mqa-train-fusion
+mqa-predict-fusion
 ```
 
 Feature extraction uses separate reproducible environments because fair-esm and
@@ -74,7 +96,7 @@ upstream [ProteinMPNN](https://github.com/dauparas/ProteinMPNN) checkout and its
 [DeepAccNet](https://github.com/hiranumn/DeepAccNet) checkout and a separately
 licensed PyRosetta installation.
 
-## Feature extraction
+## Feature Extraction
 
 All extractors write compressed NPZ files with one required array:
 
@@ -139,7 +161,7 @@ python scripts/build_manifest.py \
   --output manifests/esm3_train.csv
 ```
 
-## Standalone head
+## Standalone Head
 
 ```bash
 mqa-train-head \
@@ -154,17 +176,21 @@ mqa-test-head \
   --output outputs/esm3_head_test
 ```
 
-Use `--head linear` for the additional `Linear(D, 1)` baseline.
-For an old state-dict-only checkpoint, add its representation name, for example
-`--feature esm3`. The existing ESM-3, SaProt, ProstT5, ESM-IF1, and ProteinMPNN
-head weights are supported without conversion. The ESM-2 standalone entrypoint
-is newly unified from the same 1280-dimensional head layout; no historical ESM-2
-standalone result is claimed.
+Testing writes `predictions.csv` with one row per protein model,
+`residue_scores.csv` with one row per residue, `metrics.json`, and one NPZ
+prediction file per model.
 
-## DeepAccNet fusion
+Use `--head linear` for the additional `Linear(D, 1)` baseline. For an old
+state-dict-only checkpoint, add its representation name, for example
+`--feature esm3`. The existing ESM-3, SaProt, ProstT5, ESM-IF1, and ProteinMPNN
+head weights are supported without conversion. No historical standalone ESM-2
+head is claimed here.
+
+## DeepAccNet Fusion
 
 DeepAccNet features must first be generated as `.features.npz` files with the
-original DeepAccNet program. MQA reads these files but does not generate them.
+original DeepAccNet program. ProteinRep-MQA reads these files but does not
+generate them.
 
 ```bash
 mqa-train-fusion \
@@ -174,13 +200,19 @@ mqa-train-fusion \
   --output outputs/saprot_fusion
 
 mqa-predict-fusion \
-  --checkpoint outputs/saprot_fusion/best.pkl \
+  --checkpoint outputs/saprot_fusion/best.pt \
   --manifest manifests/fusion_test.csv \
   --output outputs/saprot_fusion_test
 ```
 
-Legacy experiment checkpoints do not contain feature metadata. Supply the
-matching feature explicitly when predicting:
+Fusion prediction writes `predictions.csv` with one row per protein model,
+`residue_scores.csv` with one row per residue, `predictions.json`, and one NPZ
+prediction file per model. New fusion training runs save `last.pt` and
+`best.pt` in the selected output directory.
+
+Old experiment checkpoints may use a `.pkl` extension and may not contain
+feature metadata. For one of those trusted legacy files only, supply the
+matching feature and allow legacy pickle loading:
 
 ```bash
 mqa-predict-fusion --checkpoint /path/to/best.pkl --feature esm3 \
@@ -192,24 +224,43 @@ The final flag is required only for trusted historical DeepAccNet checkpoints
 that contain NumPy training-history objects and cannot use PyTorch's restricted
 weights-only loader.
 
-## Data and model weights
+## Data and Model Weights
 
-Datasets, pretrained model weights, structure files, extracted representations,
-and prediction outputs are not distributed with this repository.
+The downstream fusion and standalone-head weights used in the previous
+experiments are included under `weights/`.
 
-The CASP14 evaluation data and DeepAccNet training data used in the study are
-publicly available from their original sources. See the manuscript and the
-links below for details.
+| Feature | Fusion weight | Source epoch | Standalone head |
+| --- | --- | ---: | --- |
+| ESM-2 | `weights/fusion/esm2.pt` | 199 | Not available |
+| ESM-3 | `weights/fusion/esm3.pt` | 186 | `weights/head/esm3.pt` |
+| SaProt | `weights/fusion/saprot.pt` | 120 | `weights/head/saprot.pt` |
+| ProstT5 | `weights/fusion/prostt5.pt` | 159 | `weights/head/prostt5.pt` |
+| ESM-IF1 | `weights/fusion/esmif1.pt` | 173 | `weights/head/esmif1.pt` |
+| ProteinMPNN | `weights/fusion/proteinmpnn.pt` | 199 | `weights/head/proteinmpnn.pt` |
 
-Large files should be stored externally and supplied through command-line
-arguments or manifests.
+Run a packaged fusion weight with:
 
-Model weights, datasets, structure files, extracted tensors, and prediction
-outputs are not included. Keep them in external directories and pass their
-paths through command-line arguments or manifests.
+```bash
+mqa-predict-fusion \
+  --checkpoint weights/fusion/esm3.pt \
+  --manifest manifests/fusion_test.csv \
+  --output outputs/esm3_fusion_test
+```
 
+Run a packaged standalone head with:
 
-## External resources
+```bash
+mqa-test-head \
+  --checkpoint weights/head/prostt5.pt \
+  --manifest manifests/prostt5_test.csv \
+  --output outputs/prostt5_head_test
+```
+
+Large pretrained ESM-2, ESM-3, SaProt, ProstT5, ESM-IF1, and ProteinMPNN
+backbone weights are not redistributed here. CASP datasets, structure files,
+extracted tensors, and prediction outputs are also not included.
+
+## External Resources
 
 - [DeepAccNet](https://github.com/hiranumn/DeepAccNet)
 - [ESM-2 and ESM-IF1](https://github.com/facebookresearch/esm)
@@ -217,7 +268,6 @@ paths through command-line arguments or manifests.
 - [SaProt](https://github.com/westlake-repl/SaProt)
 - [ProstT5](https://huggingface.co/Rostlab/ProstT5)
 - [ProteinMPNN](https://github.com/dauparas/ProteinMPNN)
-
 
 ## Citation
 
