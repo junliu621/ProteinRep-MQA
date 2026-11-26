@@ -7,10 +7,7 @@ The TM-score commands use the same core environment as the lDDT predictors.
 
 Each row describes one candidate model. Paths are resolved relative to the
 manifest. Supply a reference `tm_score` in [0, 1] for every training and
-validation row. For prediction, the reference column is optional. Labels
-follow the reference definition of the input dataset. In the manuscript
-CASP14 and CASP16 evaluation, the reference is the mean of the official
-TM-scores over the assessed domains.
+validation row. For prediction, the reference column is optional.
 
 Standalone training and validation:
 
@@ -83,7 +80,4 @@ mqa-predict-tm --checkpoint path/to/best.pkl --feature esm3 \
   --allow-legacy-pickle
 ```
 
-`metrics.json` reports pooled regression statistics when reference labels were
-supplied. The manuscript benchmark summaries calculate correlations across
-decoys within each target and average the resulting coefficients equally
-across eligible targets.
+`metrics.json` reports pooled regression statistics when reference labels are supplied.
