@@ -255,26 +255,35 @@ framework. Predictions appear in `predictions.csv`, with one `pred_tm_score`
 per decoy. See the [TM-score workflow](docs/tm_score.md) for manifest formats,
 training settings, and legacy checkpoint usage.
 
-## Manuscript Figures
-
-The following scripts render PNGs from saved evaluation data. Install the
-plotting dependencies with `python -m pip install matplotlib pandas pillow`.
-Each script accepts `--dpi` for export resolution and `--font-file` for a
-specific font, such as Arial.
-
-| Figures | Script | Content |
-| --- | --- | --- |
-| 3 and 4 | [plot_casp16_fig3_fig4.py](scripts/plot_casp16_fig3_fig4.py) | CASP16 direct prediction and DeepAccNet augmentation. Pearson, Spearman, and the reference score of the top-ranked model. The upper row shows lDDT and the lower row shows TM-score. |
-| 5 | [plot_casp14_fig5.py](scripts/plot_casp14_fig5.py) | CASP14 Stage-2 comparison across the available targets and the 22-target multidomain subset. Panels show lDDT correlations, ROC curves, and top-ranked model selection. |
-| 6 | [plot_casp14_fig6.py](scripts/plot_casp14_fig6.py) | CASP14 T1079 case study. Global lDDT scatter plots, structural superposition, and per-residue quality profiles for T1079TS453_1. |
-
-See the [input files and commands](docs/manuscript_figures.md) for the
-evaluation tables, required columns, and score definitions.
-
 ## Data and Model Weights
 
-The lDDT fusion and standalone-head checkpoints are included under `weights/`.
-For TM-score inference, use a separately trained TM-score checkpoint.
+### CASP16 evaluation data
+
+Download the reference structures from the [official monomer archives](https://predictioncenter.org/download_area/CASP16/targets/).
+The [official domain score table](https://predictioncenter.org/download_area/CASP16/results/tables/CASP16_prot_domains.scores.csv)
+contains the domain-level `TMscore` values used to obtain the mean reference
+TM-score for each decoy.
+
+Download the regular prediction archives for the
+[52 evaluation targets](data/casp16_targets.txt) from the repository root:
+
+```bash
+mkdir -p data/casp16/predictions
+while IFS= read -r target; do
+  curl --fail --location \
+    "https://predictioncenter.org/download_area/CASP16/predictions/regular/${target}.tar.gz" \
+    --output "data/casp16/predictions/${target}.tar.gz" || break
+done < data/casp16_targets.txt
+```
+
+To recover the exact evaluation samples, match target and decoy identifiers
+against manuscript Supplementary Data S3 (17,742 lDDT decoys) or S4 (17,539
+TM-score decoys). The official archives also contain submissions outside
+those evaluated subsets.
+
+### lDDT checkpoints
+
+The lDDT checkpoints are in `weights/head/` and `weights/fusion/`.
 
 | Feature | Fusion weight | Source epoch | Standalone head |
 | --- | --- | ---: | --- |
@@ -301,6 +310,30 @@ mqa-test-head \
   --checkpoint weights/head/prostt5.pt \
   --manifest manifests/prostt5_test.csv \
   --output outputs/prostt5_head_test
+```
+
+### TM-score checkpoints
+
+The TM-score checkpoints are in `weights/tm/head/` and `weights/tm/fusion/`.
+They contain the model tensors from the saved CASP14 TM inference runs and
+the configuration needed to load them.
+
+| Feature | Framework A | Framework B |
+| --- | --- | --- |
+| ESM-2 | — | [esm2.pt](weights/tm/fusion/esm2.pt) |
+| ESM-3 | [esm3.pt](weights/tm/head/esm3.pt) | [esm3.pt](weights/tm/fusion/esm3.pt) |
+| SaProt | [saprot.pt](weights/tm/head/saprot.pt) | [saprot.pt](weights/tm/fusion/saprot.pt) |
+| ProstT5 | [prostt5.pt](weights/tm/head/prostt5.pt) | [prostt5.pt](weights/tm/fusion/prostt5.pt) |
+| ESM-IF1 | [esmif1.pt](weights/tm/head/esmif1.pt) | [esmif1.pt](weights/tm/fusion/esmif1.pt) |
+| ProteinMPNN | [proteinmpnn.pt](weights/tm/head/proteinmpnn.pt) | [proteinmpnn.pt](weights/tm/fusion/proteinmpnn.pt) |
+| DeepAccNet baseline | — | [deepaccnet.pt](weights/tm/fusion/deepaccnet.pt) |
+
+```bash
+mqa-predict-tm --checkpoint weights/tm/head/esm3.pt \
+  --manifest manifests/tm_head_test.csv --output outputs/esm3_tm_test
+
+mqa-predict-tm --checkpoint weights/tm/fusion/esm3.pt \
+  --manifest manifests/tm_fusion_test.csv --output outputs/esm3_fusion_tm_test
 ```
 
 Large pretrained ESM-2, ESM-3, SaProt, ProstT5, ESM-IF1, and ProteinMPNN
