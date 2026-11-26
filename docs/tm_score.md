@@ -30,6 +30,23 @@ For the DeepAccNet baseline, use `--framework fusion --feature deepaccnet`
 with the fusion manifest columns `target,decoy,feature,tm_score`.
 Inference uses the candidate-model features and the optional embedding.
 
+Example manifests are available for the [standalone head](../examples/manifests/tm_head.csv)
+and [fusion](../examples/manifests/tm_fusion.csv). To build manifests from
+target/decoy trees, supply a CSV with `target,decoy,tm_score` columns:
+
+```bash
+python scripts/build_manifest.py --task tm \
+  --embedding-root features/esm3 \
+  --tm-labels labels/train_tm.csv --output manifests/tm_head_train.csv
+
+python scripts/build_manifest.py --task tm \
+  --embedding-root features/esm3 --feature-root features/deepaccnet \
+  --tm-labels labels/train_tm.csv --output manifests/tm_fusion_train.csv
+```
+
+Omit `--tm-labels` to build an unlabeled inference manifest. For the
+DeepAccNet baseline, provide only the DeepAccNet feature root.
+
 ## Training settings
 
 - **Framework A:** residue-wise MLP with hidden widths 512, 256, and 128,
@@ -48,10 +65,14 @@ Inference uses the candidate-model features and the optional embedding.
   decoy per target. `best.pt` is selected by validation MSE and `last.pt`
   stores the final epoch.
 
-## Inference with historical checkpoints
+## Inference
 
-Use the checkpoint from the matching TM-score run. For a historical fusion
-checkpoint without feature metadata, supply `--feature`. Some older PyTorch
+The shipped model weights are in `weights/tm/head/` and `weights/tm/fusion/`.
+Their metadata supplies the feature and framework automatically. Use
+`weights/tm/fusion/deepaccnet.pt` with a feature-only manifest for the baseline.
+
+For a historical fusion checkpoint without feature metadata, supply
+`--feature`. Some older PyTorch
 checkpoints also contain serialized NumPy training history. For checkpoints
 whose source you trust, use `--allow-legacy-pickle` when the restricted loader
 indicates it is required.
@@ -63,5 +84,6 @@ mqa-predict-tm --checkpoint path/to/best.pkl --feature esm3 \
 ```
 
 `metrics.json` reports pooled regression statistics when reference labels were
-supplied. The manuscript benchmark summaries use within-target correlations
-and equal target weighting, as described in the [figure inputs](manuscript_figures.md).
+supplied. The manuscript benchmark summaries calculate correlations across
+decoys within each target and average the resulting coefficients equally
+across eligible targets.
