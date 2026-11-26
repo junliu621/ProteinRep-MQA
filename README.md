@@ -257,31 +257,23 @@ training settings, and legacy checkpoint usage.
 
 ## Model Weights
 
+Choose a checkpoint with `--checkpoint`, your input CSV with `--manifest`,
+and the results directory with `--output`. The examples use placeholder
+manifest paths.
+
 ### lDDT checkpoints
 
-The lDDT checkpoints are in `weights/head/` and `weights/fusion/`.
-
-| Feature | Fusion weight | Source epoch | Standalone head |
-| --- | --- | ---: | --- |
-| ESM-2 | `weights/fusion/esm2.pt` | 199 | Not available |
-| ESM-3 | `weights/fusion/esm3.pt` | 186 | `weights/head/esm3.pt` |
-| SaProt | `weights/fusion/saprot.pt` | 120 | `weights/head/saprot.pt` |
-| ProstT5 | `weights/fusion/prostt5.pt` | 159 | `weights/head/prostt5.pt` |
-| ESM-IF1 | `weights/fusion/esmif1.pt` | 173 | `weights/head/esmif1.pt` |
-| ProteinMPNN | `weights/fusion/proteinmpnn.pt` | 199 | `weights/head/proteinmpnn.pt` |
-
-Run a packaged fusion weight with:
+The standalone lDDT models are in [`weights/head/`](weights/head/) and the
+DeepAccNet fusion models are in [`weights/fusion/`](weights/fusion/).
 
 ```bash
+# Predict residue-level lDDT with DeepAccNet and ESM-3 features.
 mqa-predict-fusion \
   --checkpoint weights/fusion/esm3.pt \
   --manifest manifests/fusion_test.csv \
   --output outputs/esm3_fusion_test
-```
 
-Run a packaged standalone head with:
-
-```bash
+# Evaluate residue-level lDDT predictions from ProstT5 features.
 mqa-test-head \
   --checkpoint weights/head/prostt5.pt \
   --manifest manifests/prostt5_test.csv \
@@ -290,23 +282,16 @@ mqa-test-head \
 
 ### TM-score checkpoints
 
-The TM-score checkpoints are in `weights/tm_head/` and `weights/tm_fusion/`.
-They include the trained model parameters and the configuration for inference.
-
-| Feature | Framework A | Framework B |
-| --- | --- | --- |
-| ESM-2 | — | [esm2.pt](weights/tm_fusion/esm2.pt) |
-| ESM-3 | [esm3.pt](weights/tm_head/esm3.pt) | [esm3.pt](weights/tm_fusion/esm3.pt) |
-| SaProt | [saprot.pt](weights/tm_head/saprot.pt) | [saprot.pt](weights/tm_fusion/saprot.pt) |
-| ProstT5 | [prostt5.pt](weights/tm_head/prostt5.pt) | [prostt5.pt](weights/tm_fusion/prostt5.pt) |
-| ESM-IF1 | [esmif1.pt](weights/tm_head/esmif1.pt) | [esmif1.pt](weights/tm_fusion/esmif1.pt) |
-| ProteinMPNN | [proteinmpnn.pt](weights/tm_head/proteinmpnn.pt) | [proteinmpnn.pt](weights/tm_fusion/proteinmpnn.pt) |
-| DeepAccNet baseline | — | [deepaccnet.pt](weights/tm_fusion/deepaccnet.pt) |
+The standalone TM-score models are in [`weights/tm_head/`](weights/tm_head/)
+and the DeepAccNet-based models are in [`weights/tm_fusion/`](weights/tm_fusion/).
+Both commands below produce one predicted TM-score per candidate structure.
 
 ```bash
+# Framework A: use ESM-3 features.
 mqa-predict-tm --checkpoint weights/tm_head/esm3.pt \
   --manifest manifests/tm_head_test.csv --output outputs/esm3_tm_test
 
+# Framework B: use DeepAccNet and ESM-3 features.
 mqa-predict-tm --checkpoint weights/tm_fusion/esm3.pt \
   --manifest manifests/tm_fusion_test.csv --output outputs/esm3_fusion_tm_test
 ```
