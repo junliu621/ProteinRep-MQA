@@ -255,31 +255,7 @@ framework. Predictions appear in `predictions.csv`, with one `pred_tm_score`
 per decoy. See the [TM-score workflow](docs/tm_score.md) for manifest formats,
 training settings, and legacy checkpoint usage.
 
-## Data and Model Weights
-
-### CASP16 evaluation data
-
-Download the reference structures from the [official monomer archives](https://predictioncenter.org/download_area/CASP16/targets/).
-The [official domain score table](https://predictioncenter.org/download_area/CASP16/results/tables/CASP16_prot_domains.scores.csv)
-contains the domain-level `TMscore` values used to obtain the mean reference
-TM-score for each decoy.
-
-Download the regular prediction archives for the
-[52 evaluation targets](data/casp16_targets.txt) from the repository root:
-
-```bash
-mkdir -p data/casp16/predictions
-while IFS= read -r target; do
-  curl --fail --location \
-    "https://predictioncenter.org/download_area/CASP16/predictions/regular/${target}.tar.gz" \
-    --output "data/casp16/predictions/${target}.tar.gz" || break
-done < data/casp16_targets.txt
-```
-
-To recover the exact evaluation samples, match target and decoy identifiers
-against manuscript Supplementary Data S3 (17,742 lDDT decoys) or S4 (17,539
-TM-score decoys). The official archives also contain submissions outside
-those evaluated subsets.
+## Model Weights
 
 ### lDDT checkpoints
 
@@ -315,8 +291,7 @@ mqa-test-head \
 ### TM-score checkpoints
 
 The TM-score checkpoints are in `weights/tm/head/` and `weights/tm/fusion/`.
-They contain the model tensors from the saved CASP14 TM inference runs and
-the configuration needed to load them.
+They include the trained model parameters and the configuration for inference.
 
 | Feature | Framework A | Framework B |
 | --- | --- | --- |
@@ -336,9 +311,7 @@ mqa-predict-tm --checkpoint weights/tm/fusion/esm3.pt \
   --manifest manifests/tm_fusion_test.csv --output outputs/esm3_fusion_tm_test
 ```
 
-Large pretrained ESM-2, ESM-3, SaProt, ProstT5, ESM-IF1, and ProteinMPNN
-backbone weights are not redistributed here. CASP datasets, structure files,
-extracted tensors, and prediction outputs are also not included.
+The feature extractors use the upstream backbone checkpoints linked below.
 
 ## External Resources
 
