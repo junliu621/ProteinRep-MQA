@@ -51,7 +51,7 @@ class DeepAccNetFusion(nn.Module):
 
     def __init__(
         self,
-        representation_dim: int,
+        representation_dim: int | None,
         representation_hidden_dims: Sequence[int],
         *,
         one_body_dim: int = 70,
@@ -61,12 +61,16 @@ class DeepAccNetFusion(nn.Module):
         channels: int = 128,
         residue_types: int = 20,
         projection_name: str = "esm_mlp",
+        task: str = "lddt",
     ) -> None:
         super().__init__()
         self.representation_dim = representation_dim
         self.one_body_dim = one_body_dim
         self.two_body_dim = two_body_dim
         self.residue_types = residue_types
+        self.task = task
+        if task not in {"lddt", "tm_score"}:
+            raise ValueError(f"Unknown DeepAccNet task {task!r}")
 
         self.retype = nn.Conv3d(residue_types, 20, 1, bias=False)
         self.conv3d_1 = nn.Conv3d(20, 20, 3)
@@ -74,24 +78,29 @@ class DeepAccNetFusion(nn.Module):
         self.conv3d_3 = nn.Conv3d(30, 10, 4)
         self.pool3d_1 = nn.AvgPool3d(4, stride=4)
 
-        projection_layers: list[nn.Module] = []
-        current = representation_dim
-        for hidden in representation_hidden_dims:
-            projection_layers.extend((nn.Linear(current, hidden), nn.ELU()))
-            current = hidden
-        if current != projection_dim:
-            projection_layers.extend((nn.Linear(current, projection_dim), nn.ELU()))
         if projection_name not in {"esm_mlp", "mlp"}:
             raise ValueError("projection_name must be 'esm_mlp' or 'mlp'")
         self.projection_name = projection_name
-        self.add_module(projection_name, nn.Sequential(*projection_layers))
+        if representation_dim is not None:
+            projection_layers: list[nn.Module] = []
+            current = representation_dim
+            for hidden in representation_hidden_dims:
+                projection_layers.extend((nn.Linear(current, hidden), nn.ELU()))
+                current = hidden
+            if current != projection_dim:
+                projection_layers.extend((nn.Linear(current, projection_dim), nn.ELU()))
+            self.add_module(projection_name, nn.Sequential(*projection_layers))
 
-        self.conv1d_1 = nn.Conv1d(640 + one_body_dim + projection_dim, channels // 2, 1)
+        extra_dim = projection_dim if representation_dim is not None else 0
+        self.conv1d_1 = nn.Conv1d(640 + one_body_dim + extra_dim, channels // 2, 1)
         self.conv2d_1 = nn.Conv2d(channels + two_body_dim, channels, 1)
         self.inorm_1 = nn.InstanceNorm2d(channels, eps=1e-6, affine=True)
         self.base_resnet = LegacyResNet(
             channels, chunks, "base_resnet", instance_norm=True, initial_projection=True
         )
+        if task == "tm_score":
+            self.tm_head = nn.Sequential(nn.Linear(channels, 64), nn.ELU(), nn.Linear(64, 1), nn.Sigmoid())
+            return
         self.error_resnet = LegacyResNet(
             channels, 1, "error_resnet", initial_projection=True, extra_blocks=True
         )
@@ -107,15 +116,17 @@ class DeepAccNetFusion(nn.Module):
         voxel_values: torch.Tensor,
         one_body: torch.Tensor,
         two_body: torch.Tensor,
-        representation: torch.Tensor,
+        representation: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
         if one_body.ndim != 2:
             raise ValueError(f"one_body must be [L, C], got {tuple(one_body.shape)}")
         length = one_body.shape[0]
-        if tuple(representation.shape) != (length, self.representation_dim):
-            raise ValueError(
-                f"representation must be [{length}, {self.representation_dim}], got {tuple(representation.shape)}"
-            )
+        if self.representation_dim is None:
+            if representation is not None:
+                raise ValueError("DeepAccNet without augmentation does not take a representation")
+        elif representation is None or tuple(representation.shape) != (length, self.representation_dim):
+            shape = None if representation is None else tuple(representation.shape)
+            raise ValueError(f"representation must be [{length}, {self.representation_dim}], got {shape}")
         if two_body.ndim == 3:
             two_body = two_body.unsqueeze(0)
         if tuple(two_body.shape) != (1, self.two_body_dim, length, length):
@@ -134,8 +145,10 @@ class DeepAccNetFusion(nn.Module):
         output = self.pool3d_1(output)
         voxel_features = output.permute(0, 2, 3, 4, 1).flatten(start_dim=1)
 
-        representation = self._modules[self.projection_name](representation)
-        one_dimensional = torch.cat((voxel_features, one_body, representation), dim=1)
+        residue_features = [voxel_features, one_body]
+        if representation is not None:
+            residue_features.append(self._modules[self.projection_name](representation))
+        one_dimensional = torch.cat(residue_features, dim=1)
         one_dimensional = F.elu(self.conv1d_1(one_dimensional.T.unsqueeze(0)))
 
         rows = one_dimensional.unsqueeze(3).expand(-1, -1, -1, length)
@@ -143,6 +156,8 @@ class DeepAccNetFusion(nn.Module):
         pair = torch.cat((rows, columns, two_body), dim=1)
         pair = F.elu(self.inorm_1(self.conv2d_1(pair)))
         pair = F.elu(self.base_resnet(pair))
+        if self.task == "tm_score":
+            return {"tm_score": self.tm_head(pair.mean(dim=(-2, -1))).reshape(())}
 
         error_features = F.elu(self.error_resnet(pair))
         estogram_logits = self.conv2d_error(error_features)

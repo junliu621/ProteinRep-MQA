@@ -71,9 +71,11 @@ def _distance_transform(values: np.ndarray, cutoff: float = 4.0, scale: float = 
 
 def load_deepaccnet_sample(
     feature_path: str | Path,
-    embedding_path: str | Path,
-    representation_dim: int,
+    embedding_path: str | Path | None,
+    representation_dim: int | None,
     native_path: str | Path | None = None,
+    *,
+    tm_features: bool = False,
 ) -> dict[str, torch.Tensor]:
     with np.load(feature_path, allow_pickle=False) as data:
         required = {
@@ -97,11 +99,15 @@ def load_deepaccnet_sample(
         maps = data["maps"].copy()
 
     length = tbt_raw.shape[-1]
-    embedding = load_embedding(embedding_path, representation_dim)
-    if embedding.shape[0] == length + 2:
-        embedding = embedding[1:-1]
-    if embedding.shape[0] != length:
-        raise ValueError(f"Embedding length {embedding.shape[0]} != DeepAccNet length {length}")
+    if (embedding_path is None) != (representation_dim is None):
+        raise ValueError("Specify both embedding_path and representation_dim for augmentation")
+    embedding = None
+    if embedding_path is not None:
+        embedding = load_embedding(embedding_path, representation_dim)
+        if embedding.shape[0] == length + 2:
+            embedding = embedding[1:-1]
+        if embedding.shape[0] != length:
+            raise ValueError(f"Embedding length {embedding.shape[0]} != DeepAccNet length {length}")
 
     angles = np.stack((np.sin(phi), np.cos(phi), np.sin(psi), np.cos(psi)), axis=-1)
     one_body = np.concatenate((angles, obt, prop), axis=-1)
@@ -109,9 +115,10 @@ def load_deepaccnet_sample(
     orientations = np.concatenate((np.sin(orientations), np.cos(orientations)), axis=-1)
     euler_features = np.concatenate((np.sin(euler), np.cos(euler)), axis=-1)
     separation = np.abs(np.arange(length)[:, None] - np.arange(length)[None, :]) / 100.0 - 1.0
-    tbt = tbt_raw.transpose(1, 2, 0)
+    # The TM experiments used the legacy transpose and a zero cutoff for maps.
+    tbt = tbt_raw.T.copy() if tm_features else tbt_raw.transpose(1, 2, 0)
     tbt[:, :, 0] = _distance_transform(tbt[:, :, 0])
-    maps = _distance_transform(maps)
+    maps = _distance_transform(maps, cutoff=0.0 if tm_features else 4.0)
     two_body = np.concatenate((tbt, maps, euler_features, orientations, separation[:, :, None]), axis=-1)
 
     sample = {
@@ -119,8 +126,9 @@ def load_deepaccnet_sample(
         "voxel_values": torch.from_numpy(values).float(),
         "one_body": torch.from_numpy(one_body).float(),
         "two_body": torch.from_numpy(two_body.transpose(2, 0, 1)).float(),
-        "representation": embedding,
     }
+    if embedding is not None:
+        sample["representation"] = embedding
     if native_path is not None:
         with np.load(native_path, allow_pickle=False) as native:
             native_distances = native["tbt"][0].astype(np.float32)
