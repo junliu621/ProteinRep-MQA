@@ -290,24 +290,24 @@ mqa-test-head \
 
 ### TM-score checkpoints
 
-The TM-score checkpoints are in `weights/tm/head/` and `weights/tm/fusion/`.
+The TM-score checkpoints are in `weights/tm_head/` and `weights/tm_fusion/`.
 They include the trained model parameters and the configuration for inference.
 
 | Feature | Framework A | Framework B |
 | --- | --- | --- |
-| ESM-2 | — | [esm2.pt](weights/tm/fusion/esm2.pt) |
-| ESM-3 | [esm3.pt](weights/tm/head/esm3.pt) | [esm3.pt](weights/tm/fusion/esm3.pt) |
-| SaProt | [saprot.pt](weights/tm/head/saprot.pt) | [saprot.pt](weights/tm/fusion/saprot.pt) |
-| ProstT5 | [prostt5.pt](weights/tm/head/prostt5.pt) | [prostt5.pt](weights/tm/fusion/prostt5.pt) |
-| ESM-IF1 | [esmif1.pt](weights/tm/head/esmif1.pt) | [esmif1.pt](weights/tm/fusion/esmif1.pt) |
-| ProteinMPNN | [proteinmpnn.pt](weights/tm/head/proteinmpnn.pt) | [proteinmpnn.pt](weights/tm/fusion/proteinmpnn.pt) |
-| DeepAccNet baseline | — | [deepaccnet.pt](weights/tm/fusion/deepaccnet.pt) |
+| ESM-2 | — | [esm2.pt](weights/tm_fusion/esm2.pt) |
+| ESM-3 | [esm3.pt](weights/tm_head/esm3.pt) | [esm3.pt](weights/tm_fusion/esm3.pt) |
+| SaProt | [saprot.pt](weights/tm_head/saprot.pt) | [saprot.pt](weights/tm_fusion/saprot.pt) |
+| ProstT5 | [prostt5.pt](weights/tm_head/prostt5.pt) | [prostt5.pt](weights/tm_fusion/prostt5.pt) |
+| ESM-IF1 | [esmif1.pt](weights/tm_head/esmif1.pt) | [esmif1.pt](weights/tm_fusion/esmif1.pt) |
+| ProteinMPNN | [proteinmpnn.pt](weights/tm_head/proteinmpnn.pt) | [proteinmpnn.pt](weights/tm_fusion/proteinmpnn.pt) |
+| DeepAccNet baseline | — | [deepaccnet.pt](weights/tm_fusion/deepaccnet.pt) |
 
 ```bash
-mqa-predict-tm --checkpoint weights/tm/head/esm3.pt \
+mqa-predict-tm --checkpoint weights/tm_head/esm3.pt \
   --manifest manifests/tm_head_test.csv --output outputs/esm3_tm_test
 
-mqa-predict-tm --checkpoint weights/tm/fusion/esm3.pt \
+mqa-predict-tm --checkpoint weights/tm_fusion/esm3.pt \
   --manifest manifests/tm_fusion_test.csv --output outputs/esm3_fusion_tm_test
 ```
 
