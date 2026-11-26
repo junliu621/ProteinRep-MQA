@@ -64,9 +64,9 @@ DeepAccNet baseline, provide only the DeepAccNet feature root.
 
 ## Inference
 
-The shipped model weights are in `weights/tm/head/` and `weights/tm/fusion/`.
+The shipped model weights are in `weights/tm_head/` and `weights/tm_fusion/`.
 Their metadata supplies the feature and framework automatically. Use
-`weights/tm/fusion/deepaccnet.pt` with a feature-only manifest for the baseline.
+`weights/tm_fusion/deepaccnet.pt` with a feature-only manifest for the baseline.
 
 For a historical fusion checkpoint without feature metadata, supply
 `--feature`. Some older PyTorch
