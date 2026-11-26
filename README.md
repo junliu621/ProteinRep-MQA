@@ -13,9 +13,8 @@ assessment:
 2. **Direct quality decodability** - whether residue-level model quality can be
    predicted directly from frozen pretrained representations using a lightweight
    prediction head.
-3. **Feature complementarity** - whether pretrained representations provide
-   additional information when integrated with the established DeepAccNet
-   framework.
+3. **Feature augmentation** - how pretrained representations affect performance
+   when integrated into the established DeepAccNet framework.
 
 ## Overview
 
@@ -224,6 +223,22 @@ The final flag is required only for trusted historical DeepAccNet checkpoints
 that contain NumPy training-history objects and cannot use PyTorch's restricted
 weights-only loader.
 
+## Manuscript Figures
+
+The following scripts render PNGs from saved evaluation data. Install the
+plotting dependencies with `python -m pip install matplotlib pandas pillow`.
+Each script accepts `--dpi` for export resolution and `--font-file` for a
+specific font, such as Arial.
+
+| Figures | Script | Content |
+| --- | --- | --- |
+| 3 and 4 | [plot_casp16_fig3_fig4.py](scripts/plot_casp16_fig3_fig4.py) | CASP16 direct prediction and DeepAccNet augmentation. Pearson, Spearman, and the reference score of the top-ranked model. The upper row shows lDDT and the lower row shows TM-score. |
+| 5 | [plot_casp14_fig5.py](scripts/plot_casp14_fig5.py) | CASP14 Stage-2 comparison across the available targets and the 22-target multidomain subset. Panels show lDDT correlations, ROC curves, and top-ranked model selection. |
+| 6 | [plot_casp14_fig6.py](scripts/plot_casp14_fig6.py) | CASP14 T1079 case study. Global lDDT scatter plots, structural superposition, and per-residue quality profiles for T1079TS453_1. |
+
+See the [input files and commands](docs/manuscript_figures.md) for the
+evaluation tables, required columns, and score definitions.
+
 ## Data and Model Weights
 
 The downstream fusion and standalone-head weights used in the previous
@@ -273,7 +288,7 @@ extracted tensors, and prediction outputs are also not included.
 
 If you find ProteinRep-MQA useful, please cite:
 
-> Qihang Zhen, Lei Xie, Bo Li, Yang Zhang, Guijun Zhang, Jun Liu.
+> Qihang Zhen, Jun Liu, Lei Xie, Haodong Wang, Bo Li, Guijun Zhang, Yang Zhang.
 > **Pretrained protein representations encode signals of structural model quality.**
 > Manuscript in preparation.
 
