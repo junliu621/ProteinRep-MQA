@@ -116,7 +116,7 @@ def load_deepaccnet_sample(
     euler_features = np.concatenate((np.sin(euler), np.cos(euler)), axis=-1)
     separation = np.abs(np.arange(length)[:, None] - np.arange(length)[None, :]) / 100.0 - 1.0
     # The TM experiments used the legacy transpose and a zero cutoff for maps.
-    tbt = tbt_raw.T.copy() if tm_features else tbt_raw.transpose(1, 2, 0)
+    tbt = tbt_raw.T.copy() if tm_features else tbt_raw.transpose(1, 2, 0).copy()
     tbt[:, :, 0] = _distance_transform(tbt[:, :, 0])
     maps = _distance_transform(maps, cutoff=0.0 if tm_features else 4.0)
     two_body = np.concatenate((tbt, maps, euler_features, orientations, separation[:, :, None]), axis=-1)
