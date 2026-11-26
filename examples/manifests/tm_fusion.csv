@@ -1,0 +1,2 @@
+target,decoy,feature,embedding,tm_score
+example_target,example_decoy,../deepaccnet/example_target/example_decoy.features.npz,../features/example_target/example_decoy.npz,0.81
