@@ -2,6 +2,7 @@
 
 **ProteinRep-MQA** is a systematic evaluation framework for investigating
 structural model quality signals encoded in pretrained protein representations.
+The predictors support residue-level lDDT and decoy-level TM-score.
 
 The framework evaluates pretrained representations from six protein models,
 including ESM-2, ESM-3, SaProt, ProstT5, ESM-IF1, and ProteinMPNN, and examines
@@ -10,16 +11,15 @@ assessment:
 
 1. **Representation-space sensitivity** - whether structural quality is
    reflected in pretrained representation spaces.
-2. **Direct quality decodability** - whether residue-level model quality can be
-   predicted directly from frozen pretrained representations using a lightweight
-   prediction head.
+2. **Direct quality decodability** - whether a lightweight head can predict
+   residue-level lDDT and decoy-level TM-score from frozen representations.
 3. **Feature augmentation** - how pretrained representations affect performance
    when integrated into the established DeepAccNet framework.
 
 ## Overview
 
 <p align="center">
-  <img src="assets/framework.png" width="850">
+  <img src="assets/framework.png" width="850" alt="Framework A and B for lDDT and TM-score prediction">
 </p>
 
 ProteinRep-MQA evaluates pretrained protein representations through native-decoy
@@ -72,6 +72,8 @@ mqa-train-head
 mqa-test-head
 mqa-train-fusion
 mqa-predict-fusion
+mqa-train-tm
+mqa-predict-tm
 ```
 
 Feature extraction uses separate reproducible environments because fair-esm and
@@ -223,6 +225,36 @@ The final flag is required only for trusted historical DeepAccNet checkpoints
 that contain NumPy training-history objects and cannot use PyTorch's restricted
 weights-only loader.
 
+## TM-score Prediction
+
+The TM-score models are trained separately for the two frameworks:
+
+- **Framework A (standalone)** averages the scalar outputs of a residue-wise
+  MLP over each decoy. Validation and inference clip the pooled score to
+  `[0, 1]`.
+- **Framework B (fusion)** mean-pools the final pairwise ResNet features across
+  both residue axes. A `128 → 64 → 1` head with ELU and a final sigmoid outputs
+  one score per decoy. The same task also supports an unaugmented DeepAccNet
+  baseline.
+
+```bash
+mqa-train-tm --framework standalone --feature esm3 \
+  --train-manifest manifests/tm_head_train.csv --valid-manifest manifests/tm_head_valid.csv \
+  --output outputs/esm3_tm
+
+mqa-train-tm --framework fusion --feature esm3 \
+  --train-manifest manifests/tm_fusion_train.csv --valid-manifest manifests/tm_fusion_valid.csv \
+  --output outputs/esm3_fusion_tm
+
+mqa-predict-tm --checkpoint outputs/esm3_fusion_tm/best.pt \
+  --manifest manifests/tm_fusion_test.csv --output outputs/esm3_fusion_tm_test
+```
+
+Use `mqa-predict-tm` with the corresponding `best.pt` and manifest for either
+framework. Predictions appear in `predictions.csv`, with one `pred_tm_score`
+per decoy. See the [TM-score workflow](docs/tm_score.md) for manifest formats,
+training settings, and legacy checkpoint usage.
+
 ## Manuscript Figures
 
 The following scripts render PNGs from saved evaluation data. Install the
@@ -241,8 +273,8 @@ evaluation tables, required columns, and score definitions.
 
 ## Data and Model Weights
 
-The downstream fusion and standalone-head weights used in the previous
-experiments are included under `weights/`.
+The lDDT fusion and standalone-head checkpoints are included under `weights/`.
+For TM-score inference, use a separately trained TM-score checkpoint.
 
 | Feature | Fusion weight | Source epoch | Standalone head |
 | --- | --- | ---: | --- |
